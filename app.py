@@ -114,9 +114,7 @@ class MainWindow(QtWidgets.QMainWindow):
         for i in range(10):
             self.targets[i].setStyleSheet('font-size: 24px;')
             if i == probs.argmax().item(): 
-                self.targets[i].setStyleSheet('''font-size: 30px;
-                                                font-weight: bold; 
-                                                text-decoration: underline;''')
+                self.targets[i].setStyleSheet('font-size: 30px; font-weight: bold;')
             self.targets[i].setText(f'{i}: {probs[0, i].item() * 100:.2f}%')
        
 
