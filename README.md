@@ -5,7 +5,8 @@ This repo contains a Convolutional Neural Network implementation for the MNIST d
 ## Demo
 ![](anim.gif)
 
-> In the demo, it operates in release mode; to enable real-time classification, just uncomment ` self.predict()` in `app.MainWindow.mouseMoveEvent()` method
+> [!Note]
+> In the demo, it operates in release mode; to enable real-time classification, just uncomment `self.predict()` in `app.MainWindow.mouseMoveEvent()` method
 
 ## Model
 
