@@ -50,15 +50,31 @@ class CNN(nn.Module):
         return x
 
 
-def fit(model: nn.Module, epoch: int, device: torch.device, data_loader: data.DataLoader, 
-        optimizer: torch.optim, loss_func: Callable, get_accuracy: Callable):
+@torch.inference_mode
+def evaluate(model: nn.Module, device: torch.device, test_data_loader: data.DataLoader) -> float:
+    model.eval()
+
+    accuracy = 0.0
+    for X_batch, y_batch in (test_data_loader):
+        X_batch = X_batch.to(device)
+        y_batch = y_batch.to(device)
+
+        y_pred = model(X_batch)
+
+        accuracy += torch.mean((y_pred.argmax(dim=1) == y_batch).float())
+
+    return accuracy.item()/len(test_data_loader)
+
+
+def fit(model: nn.Module, epoch: int, device: torch.device, train_data_loader: data.DataLoader,
+        test_data_loader: data.DataLoader, optimizer: torch.optim, loss_func: Callable) -> None:
     
     model.train()
 
     for i in range(epoch):
 
         running_loss = 0.0
-        for j, batch in enumerate(data_loader):
+        for j, batch in enumerate(train_data_loader):
             X_batch, y_batch = batch
             X_batch = X_batch.to(device)
             y_batch = y_batch.to(device)
@@ -74,8 +90,7 @@ def fit(model: nn.Module, epoch: int, device: torch.device, data_loader: data.Da
             running_loss += loss.item()
 
             if j % 500 == 0:
-                with torch.no_grad():
-                    print(f'Epoch {i+1}, Epoch Loss: {loss}, Test accuracy: {get_accuracy(model)}')
+                print(f'Epoch {i+1}, Epoch Loss: {loss}, Test accuracy: {evaluate(model, device, test_data_loader)}')
 
 
 def main() -> None:
@@ -93,24 +108,13 @@ def main() -> None:
     model = CNN()
 
     loss_func = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.0003)
+    optimizer = optim.Adam(model.parameters(), lr=3e-4)
     model.to(device)
 
-    cuda_data = test_data_loader.dataset.data.view(-1, 1, 28, 28).to(device) / 255
-    cuda_targets = test_data_loader.dataset.targets.to(device)
-
-    def get_test_accuracy(model):
-        model.eval()
-        with torch.no_grad():
-            y_pred = model(cuda_data)
-            bools = y_pred.argmax(1) == cuda_targets
-        model.train()
-        return torch.mean(bools.float())
-
     epoch = 10
-    fit(model, epoch, device, train_data_loader, optimizer, loss_func, get_test_accuracy)
+    fit(model, epoch, device, train_data_loader, test_data_loader, optimizer, loss_func)
 
-    print(f'Test accuracy: {get_test_accuracy(model)}')
+    print(f'Test accuracy: {evaluate(model, device, test_data_loader)}')
 
     # Save model params
     # torch.save(model.state_dict(), 'parameters.pt')
